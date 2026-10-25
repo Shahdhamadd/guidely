@@ -25,6 +25,8 @@ Each document has one category, stored in `backend/data/categories.json`. Catego
 
 You need Python 3.12, Node.js 22 and [Ollama](https://ollama.com).
 
+The commands below are for Windows. On macOS or Linux, replace `.venv/Scripts/python` with `.venv/bin/python`.
+
 ```bash
 ollama pull llama3.2:3b
 python -m venv .venv
@@ -33,11 +35,17 @@ cp .env.example .env
 cd frontend && npm install
 ```
 
+`.env` is not committed to git; `.env.example` lists every setting with its default. There are no API keys.
+
+Make sure Ollama is running (it usually starts on its own after install; if not, run `ollama serve`).
+
 Start the backend from `backend/`:
 
 ```bash
 ../.venv/Scripts/python -m uvicorn main:app --reload
 ```
+
+The first start downloads the embedding model (`BAAI/bge-small-en-v1.5`, about 130 MB), so it needs an internet connection and takes a little longer. After that it is cached and works offline.
 
 Start the frontend from `frontend/`:
 
@@ -45,14 +53,45 @@ Start the frontend from `frontend/`:
 npm run dev
 ```
 
-Open http://localhost:5173, go to the Documents page and click Re-index all. The API docs are at http://localhost:8000/docs.
+Open http://localhost:5173 (use `localhost`, not `127.0.0.1`, because the backend only allows requests from `http://localhost:5173`), go to the Documents page and click Re-index all. The index is not stored in git, so this step is needed once after cloning. The API docs are at http://localhost:8000/docs.
+
+## Project structure
+
+```
+guidely/
+├── backend/
+│   ├── main.py              # App setup, error handlers, /health, /metrics, CSV export
+│   ├── routes/
+│   │   ├── documents.py     # Parsing, chunking, embedding cache, FAISS index, document endpoints
+│   │   └── search.py        # Retrieval, prompt, Ollama calls, answer + sources
+│   ├── models/record.py     # Request bodies
+│   ├── data/
+│   │   ├── sample-docs/     # The 6 sample documents
+│   │   ├── categories.json  # Category of each document
+│   │   ├── index/           # FAISS index, chunks and caches (created by re-index, not in git)
+│   │   └── logs/            # Query, error and index logs (not in git)
+│   └── tests/
+│       ├── test_api.py      # API and error-handling tests
+│       ├── evaluate.py      # Retrieval and answer evaluation
+│       ├── eval_questions.json
+│       └── eval_results.md
+├── frontend/
+│   └── src/
+│       ├── api.js           # Calls to the backend
+│       ├── components/
+│       ├── pages/           # SearchPage (Ask) and AdminPage (Documents)
+│       └── App.jsx
+├── requirements.txt
+├── .env.example
+└── README.md
+```
 
 ## How it works
 
 Indexing:
 
 1. Each `.txt`, `.md` or `.pdf` file is read as plain text. Files that can't be read are skipped and listed in the response.
-2. The text is split by `# Heading`, then into chunks of up to 250 words. Paragraphs are not cut in half.
+2. The text is split by `# Heading`, then into chunks of up to 250 words (about 330 tokens). Paragraphs are not cut in half. This is smaller than the 500–1,000 tokens suggested in the brief on purpose: the sample sections are short, and smaller chunks keep each one about a single topic, which gave better retrieval and shorter prompts for the local model. It can be changed with `CHUNK_WORDS` in `.env`.
 3. Each chunk is embedded with `BAAI/bge-small-en-v1.5`. Embeddings are cached by a SHA-256 hash of the chunk text, so a chunk that hasn't changed is never embedded twice. Each re-index also removes the embeddings of chunks that were edited or deleted. Question embeddings live in a separate cache (`query_cache.json`) that keeps the newest 500 questions (`MAX_CACHED_QUESTIONS`).
 4. The vectors go into a FAISS index (cosine similarity) and the chunk labels go into `chunks.json`.
 
@@ -121,7 +160,7 @@ Measured on my laptop (Intel i9-13900H, 16 GB RAM, CPU only) with warm caches.
 | 8 | Unanswerable questions refused | - | 100% (6/6) |
 | 9 | Follow-up questions (the 4 example pairs on the Search page) | - | 4/4 answered with the right source |
 
-Metrics 1, 2, 6 and 8 come from `tests/evaluate.py` and were checked by hand. The 38 questions in `tests/eval_questions.json` are in four groups:
+Metrics 1, 2, 6 and 8 come from `tests/evaluate.py`. The script scores each answer automatically: retrieval by checking the expected file and section are in the top 3, and answers and snippets by looking for expected keywords. I then reviewed every miss by hand (see below). The 38 questions in `tests/eval_questions.json` are in four groups:
 
 | Group | Count | What it tests | Retrieval@3 | Answer correct |
 |---|---|---|---|---|
@@ -135,11 +174,16 @@ What the misses show (full list in `tests/eval_results.md`):
 - **Grader too strict (fixed):** "No, the desktop app does not work on Linux" and "No, you are not allowed to keep client information on a thumb drive" were correct but didn't contain the keywords ("not supported", "USB"). A keyword in `eval_questions.json` can now be a list of other ways to say the same thing, e.g. `["not supported", "does not work"]`.
 - **Refusals in the model's own words:** the model doesn't always use the exact "I couldn't find this in the documents." sentence (e.g. "I couldn't find the Enterprise plan in the provided sources."). The backend also treats an answer as "not found" when it has a phrase like "couldn't find" or "do not contain" **and** no `[n]` citation, so a real answer like "If you can't find a file, check the Trash [1]" is kept.
 
-Metrics 3, 4, 5 and 7 are logged by the backend and shown at http://localhost:8000/metrics.
+Metrics 3, 4, 5 and 7 are logged by the backend and shown at http://localhost:8000/metrics. `/metrics` covers every query in `backend/data/logs/queries.jsonl` since the log was created, including cold starts, so its latency numbers can be higher than the warm-cache run in the table. Delete the `logs/` folder to start a fresh measurement.
 
 To run the tests, from `backend/`:
 
 ```bash
-../.venv/Scripts/python -m tests.evaluate
 ../.venv/Scripts/python -m pytest tests/test_api.py -v
 ```
+
+```bash
+../.venv/Scripts/python -m tests.evaluate
+```
+
+`test_api.py` builds the index itself and does not need Ollama (model calls are replaced with fakes). `evaluate.py` asks the real model, so Ollama must be running and the documents must be indexed first (Re-index all on the Documents page, or run `test_api.py` once). It writes its results to `tests/eval_results.md`.

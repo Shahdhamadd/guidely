@@ -2,6 +2,8 @@ import json
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 
+import pytest
+import requests
 from fastapi.testclient import TestClient
 
 from main import app
@@ -21,6 +23,11 @@ from routes.documents import (
 from routes.search import QUERY_PREFIX, is_refusal, pick_sources
 
 client = TestClient(app)
+
+
+@pytest.fixture(scope="module", autouse=True)
+def build_index():
+    documents.reindex()
 
 
 def test_health():
@@ -90,7 +97,11 @@ def test_missing_model(monkeypatch):
 
 
 def test_model_timeout(monkeypatch):
-    monkeypatch.setattr(search, "LLM_TIMEOUT", 0.001)
+    def slow_model(*args, **kwargs):
+        raise requests.exceptions.Timeout()
+
+    monkeypatch.setattr(search, "LLM_MODEL", "test-model")
+    monkeypatch.setattr(search.requests, "post", slow_model)
     response = client.post("/search/ask", json={"question": "How many vacation days do I get?"})
     assert response.status_code == 504
     assert "took longer than" in response.json()["error"]
