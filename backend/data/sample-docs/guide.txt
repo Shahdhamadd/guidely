@@ -1,0 +1,27 @@
+# Brightpath Desktop App Setup Guide
+
+This guide explains how to install the Brightpath desktop app and start syncing files.
+
+# System Requirements
+
+The desktop app runs on Windows 10 or later and macOS 12 or later. It needs at least 4 GB of RAM and 500 MB of free disk space for the app itself. Linux is not supported; Linux users can use the web app instead.
+
+# Installing the App
+
+Download the installer from brightpath.example/download. On Windows, run BrightpathSetup.exe and follow the steps. On macOS, open the .dmg file and drag Brightpath into the Applications folder. The installation takes about 2 minutes.
+
+# Signing In for the First Time
+
+Open the app and sign in with your Brightpath email and password. If your company uses single sign-on, click "Sign in with SSO" and enter your work email. After signing in, the app creates a folder called Brightpath in your home directory.
+
+# Choosing Folders to Sync
+
+By default, everything in your Brightpath folder is synced. To save disk space, open Preferences, then Selective Sync, and untick the folders you do not need on this computer. Unticked folders stay safe in the cloud.
+
+# Sync Status Icons
+
+A green tick means the file is synced. A blue circle with arrows means the file is syncing right now. A red cross means the sync failed, usually because the file is open in another program or the name contains characters like a colon or a question mark.
+
+# Fixing Sync Problems
+
+If files are not syncing, first check your internet connection. Then click the Brightpath icon in the taskbar and choose "Pause sync", wait 10 seconds, and choose "Resume sync". If the problem continues, sign out and sign in again. As a last step, reinstall the app; your files in the cloud are not affected.

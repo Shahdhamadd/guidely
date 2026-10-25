@@ -1,0 +1,23 @@
+# Brightpath New Employee Onboarding Guide
+
+Welcome to Brightpath! This guide explains what happens in your first weeks.
+
+# Your First Day
+
+Arrive at 9:00 at the main office reception on the 4th floor. Bring your CPR card or passport so HR can finish your contract. IT will give you your laptop and help you set up your accounts. You will have lunch with your team and meet your onboarding buddy.
+
+# Your Onboarding Buddy
+
+Every new employee gets an onboarding buddy from another team. Your buddy is your first contact for everyday questions such as where things are, how meetings work, and who to ask for help. Plan a 30-minute coffee with your buddy every week during your first month.
+
+# Your First Week
+
+During the first week you will complete the required training in the Learning portal: Security Basics, Data Privacy, and Customer Support Fundamentals. All three courses must be finished within your first 7 days. You will also get access to Slack, Zendesk, and the knowledge base.
+
+# Probation Period
+
+The probation period is 3 months. During probation, the notice period is 7 days and remote work is not available. At the end of probation, your manager will hold a review meeting to confirm your position.
+
+# Tools You Will Use
+
+Slack is used for daily communication. Zendesk is used for customer support tickets. Jira is used for bugs and engineering tasks. Google Calendar is used for meetings and recording remote days.

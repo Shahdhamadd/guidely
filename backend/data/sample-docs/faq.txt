@@ -1,0 +1,31 @@
+# Brightpath Customer FAQ
+
+Answers to the questions customers ask our support team most often about Brightpath Cloud Storage.
+
+# Plans and Pricing
+
+Brightpath offers three plans. The Free plan includes 5 GB of storage. The Plus plan costs 4 BHD per month and includes 200 GB. The Business plan costs 12 BHD per user per month and includes 2 TB per user, admin controls, and priority support.
+
+Customers who pay yearly get 2 months free compared to paying monthly.
+
+# Refunds
+
+Customers can get a full refund within 14 days of their first payment. After 14 days, payments are not refundable, but customers can cancel at any time and keep access until the end of the billing period. Refunds are processed within 5 to 7 business days to the original payment method.
+
+# Cancelling a Subscription
+
+To cancel, go to Settings, then Billing, then Cancel plan. Your files stay available for 30 days after the plan ends. After 30 days, files above the Free plan limit of 5 GB are permanently deleted.
+
+# Account and Password
+
+If a customer forgets their password, they can click "Forgot password" on the login page. The reset link is valid for 1 hour. Support agents must never ask a customer for their password.
+
+Customers can change the email address on their account in Settings, then Profile. A confirmation link is sent to the new email address.
+
+# File Limits
+
+The maximum size for a single uploaded file is 50 GB on the Business plan and 10 GB on the Free and Plus plans. Deleted files stay in the Trash for 30 days and can be restored from there.
+
+# Contacting Support
+
+Free plan customers can contact support by email and receive a reply within 48 hours. Plus customers receive a reply within 24 hours. Business customers get priority support with a reply within 4 hours and access to live chat.

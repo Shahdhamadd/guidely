@@ -1,0 +1,27 @@
+# Brightpath IT Security Policy
+
+All employees must follow this policy to keep company and customer data safe. Report any security concern to security@brightpath.example.
+
+# Passwords
+
+Passwords must be at least 14 characters long and must not be reused from other websites. Employees must use the company password manager, 1Password, to store work passwords. Passwords are not changed on a schedule, but must be changed immediately if you think one has been exposed.
+
+# Two-Factor Authentication
+
+Two-factor authentication (2FA) is required for email, Slack, GitHub, and the HR portal. Use the authenticator app on your phone; SMS codes are not allowed. If you lose your phone, contact IT on the same day to reset your 2FA.
+
+# Laptops and Devices
+
+Company laptops must have disk encryption turned on and must lock automatically after 5 minutes of inactivity. Never leave a laptop unattended in a public place. Personal devices may be used for Slack and email only, and only with a screen lock enabled.
+
+# Phishing
+
+Do not click links or open attachments in unexpected emails. If an email asks for your password or asks you to pay an invoice urgently, it is probably phishing. Use the "Report phishing" button in Outlook to send suspicious emails to the security team.
+
+# Security Incidents
+
+If you think your account or laptop has been compromised, disconnect from the network and report it to security@brightpath.example within 1 hour. Lost or stolen laptops must be reported within 24 hours so IT can wipe the device remotely.
+
+# Customer Data
+
+Customer data may only be stored in approved systems: Brightpath Cloud, Zendesk, and the company CRM. Never copy customer data to USB drives or personal email.
