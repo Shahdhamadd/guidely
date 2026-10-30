@@ -19,7 +19,10 @@
   {"question": "When do I have to submit my expense receipts?", "file": "expenses.txt", "section": "Submitting Expenses", "keywords": ["30 days"]},
   {"question": "Who should a new hire ask everyday questions to?", "file": "onboarding.txt", "section": "Your Onboarding Buddy", "keywords": ["buddy"]},
   {"question": "Which training courses must I finish in my first week?", "file": "onboarding.txt", "section": "Your First Week", "keywords": ["Security Basics"]},
-
+  {"question": "How much do I pay for a doctor visit at a network clinic?", "file": "benefits.txt", "section": "Health Insurance", "keywords": ["2 BHD"]},
+  {"question": "How long do I have to submit an insurance claim for a clinic outside the network?", "file": "benefits.txt", "section": "Health Insurance", "keywords": ["60 days"]},
+  {"question": "How much dental treatment does the insurance cover per year?", "file": "benefits.txt", "section": "Health Insurance", "keywords": ["150 BHD"]},
+  {"question": "How much is the monthly wellness allowance?", "file": "benefits.txt", "section": "Wellness Allowance", "keywords": ["20 BHD"]},
   {"type": "reworded", "question": "If I'm under the weather, by what time should my boss hear from me?", "file": "policy.txt", "section": "Sick Leave", "keywords": ["10:00"]},
   {"type": "reworded", "question": "What's the most I can spend on accommodation each night on a business trip?", "file": "expenses.txt", "section": "Travel", "keywords": ["80 BHD"]},
   {"type": "reworded", "question": "Can I sit in a premium cabin on an 8-hour flight?", "file": "expenses.txt", "section": "Travel", "keywords": ["business class"]},
@@ -28,12 +31,10 @@
   {"type": "reworded", "question": "Am I allowed to keep client information on a thumb drive?", "file": "security.txt", "section": "Customer Data", "keywords": [["USB", "not allowed", "never copy", "must not", "cannot", "can't"]]},
   {"type": "reworded", "question": "Is there money for going to conferences?", "file": "expenses.txt", "section": "Training and Learning", "keywords": ["300 BHD"]},
   {"type": "reworded", "question": "Can I log in from home during my second week at the company?", "file": "policy.txt", "section": "Remote Work", "keywords": ["probation"]},
-
   {"type": "multi", "question": "How many paid vacation days and how many paid sick days do I get per year?", "sources": [{"file": "policy.txt", "section": "Annual Leave"}, {"file": "policy.txt", "section": "Sick Leave"}], "keywords": ["21", "15"]},
   {"type": "multi", "question": "What does the Plus plan cost and how fast does support reply to Plus customers?", "sources": [{"file": "faq.txt", "section": "Plans and Pricing"}, {"file": "faq.txt", "section": "Contacting Support"}], "keywords": ["4 BHD", "24 hours"]},
   {"type": "multi", "question": "I lost my work laptop and my phone with the authenticator app. When must I report each one?", "sources": [{"file": "security.txt", "section": "Security Incidents"}, {"file": "security.txt", "section": "Two-Factor Authentication"}], "keywords": ["24 hours", "same day"]},
   {"type": "multi", "question": "Do I need a medical certificate for 3 sick days, and how much can I claim for home internet?", "sources": [{"file": "policy.txt", "section": "Sick Leave"}, {"file": "expenses.txt", "section": "Equipment and Home Office"}], "keywords": ["certificate", "10 BHD"]},
-
   {"type": "unanswerable", "question": "What is the dress code at the office?"},
   {"type": "unanswerable", "question": "How big is the yearly performance bonus?"},
   {"type": "unanswerable", "question": "Is there free parking at the office?"},

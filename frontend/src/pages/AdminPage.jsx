@@ -34,21 +34,24 @@ export default function AdminPage() {
     setCategories(data.categories || []);
   }
 
+  // Returns true if the action worked, so a form can clear itself.
   async function run(action) {
     setBusy(true);
     setError("");
     setMessage("");
     try {
       await action();
+      return true;
     } catch (err) {
       setError(err.message);
+      return false;
     } finally {
       setBusy(false);
     }
   }
 
   function handleUpload(file, category) {
-    run(async () => {
+    return run(async () => {
       const data = await uploadDocument(file, category);
       setMessage(data.message);
       setReport(data.index);
@@ -125,6 +128,8 @@ export default function AdminPage() {
         </div>
       )}
 
+      {report && <IndexReport report={report} />}
+
       {editing ? (
         <DocumentEditor
           name={editing.name}
@@ -146,8 +151,6 @@ export default function AdminPage() {
           />
         </>
       )}
-
-      {report && <IndexReport report={report} />}
     </div>
   );
 }

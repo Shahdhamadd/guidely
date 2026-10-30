@@ -1,8 +1,14 @@
+"""Scores retrieval and answers on tests/eval_questions.json and writes tests/eval_results.md.
+
+Needs Ollama running and the documents indexed. Run from backend/: python -m tests.evaluate
+"""
+
 import json
 from pathlib import Path
 
-from routes.documents import AppError
-from routes.search import answer_question, retrieve
+from routes.search import answer_question
+from utils.errors import AppError
+from utils.retrieval import retrieve
 
 TESTS_DIR = Path(__file__).resolve().parent
 QUESTIONS_FILE = TESTS_DIR / "eval_questions.json"

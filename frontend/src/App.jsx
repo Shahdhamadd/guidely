@@ -23,7 +23,10 @@ export default function App() {
       </header>
 
       <main>
-        {page === "search" && <SearchPage />}
+        {/* The Ask page is hidden, not removed, so the conversation survives a visit to Documents. */}
+        <div hidden={page !== "search"}>
+          <SearchPage active={page === "search"} />
+        </div>
         {page === "admin" && <AdminPage />}
       </main>
     </div>

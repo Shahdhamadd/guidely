@@ -18,7 +18,7 @@ const HISTORY_SENT = 3;
 const CHANGED_TOPIC_HINT =
   "This was read as a follow-up to your earlier questions. If you changed topic, click New conversation and ask again.";
 
-export default function SearchPage() {
+export default function SearchPage({ active }) {
   const [question, setQuestion] = useState("");
   const [asked, setAsked] = useState("");
   const [category, setCategory] = useState("");
@@ -29,13 +29,22 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false);
   const [partial, setPartial] = useState("");
 
+  // The page stays mounted while the Documents page is open, so reload the
+  // categories each time it is shown in case they were changed there.
   useEffect(() => {
+    if (!active) return;
     getDocuments()
       .then((data) => setCategories(data.categories || []))
       .catch(() => {});
-  }, []);
+  }, [active]);
 
   async function ask(text) {
+    // An empty question would clear the current answer, so only show a message.
+    if (!text.trim()) {
+      setError("Please type a question.");
+      return;
+    }
+
     const earlier = result ? [...turns, { question: asked, answer: result.answer }] : turns;
 
     setQuestion(text);

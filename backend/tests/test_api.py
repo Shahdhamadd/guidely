@@ -5,29 +5,34 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 import requests
 from fastapi.testclient import TestClient
+from urllib3.exceptions import ReadTimeoutError
 
 from main import app
-from routes import documents, search
-from routes.documents import (
+from routes import search
+from utils import llm, storage, vector_store
+from utils.answers import is_refusal, pick_sources
+from utils.chunking import chunk_document, chunk_to_embedding_text
+from utils.config import (
     CACHE_FILE,
     CATEGORIES_FILE,
     CHUNKS_FILE,
+    DATA_DIR,
     DOCS_DIR,
+    LOGS_DIR,
     MAX_UPLOAD_MB,
     QUERY_CACHE_FILE,
-    chunk_to_embedding_text,
-    load_json,
-    remove_oldest,
-    text_hash,
 )
-from routes.search import QUERY_PREFIX, is_refusal, pick_sources
+from utils.embeddings import embed_with_cache, remove_least_recent, text_hash
+from utils.retrieval import QUERY_PREFIX
+from utils.errors import AppError
+from utils.storage import load_json, prune_logs, read_log, write_log
 
 client = TestClient(app)
 
 
 @pytest.fixture(scope="module", autouse=True)
 def build_index():
-    documents.reindex()
+    vector_store.reindex()
 
 
 def test_health():
@@ -90,7 +95,7 @@ def test_no_results():
 
 
 def test_missing_model(monkeypatch):
-    monkeypatch.setattr(search, "LLM_MODEL", "")
+    monkeypatch.setattr(llm, "LLM_MODEL", "")
     response = client.post("/search/ask", json={"question": "How many vacation days do I get?"})
     assert response.status_code == 500
     assert response.json() == {"error": "No AI model is configured. Set LLM_MODEL in the .env file."}
@@ -100,16 +105,16 @@ def test_model_timeout(monkeypatch):
     def slow_model(*args, **kwargs):
         raise requests.exceptions.Timeout()
 
-    monkeypatch.setattr(search, "LLM_MODEL", "test-model")
-    monkeypatch.setattr(search.requests, "post", slow_model)
+    monkeypatch.setattr(llm, "LLM_MODEL", "test-model")
+    monkeypatch.setattr(llm.requests, "post", slow_model)
     response = client.post("/search/ask", json={"question": "How many vacation days do I get?"})
     assert response.status_code == 504
     assert "took longer than" in response.json()["error"]
 
 
 def test_no_index(monkeypatch, tmp_path):
-    monkeypatch.setattr(documents, "INDEX_FILE", tmp_path / "missing.faiss")
-    monkeypatch.setitem(documents.memory, "index", None)
+    monkeypatch.setattr(vector_store, "INDEX_FILE", tmp_path / "missing.faiss")
+    monkeypatch.setitem(vector_store.memory, "index", None)
     response = client.post("/search/ask", json={"question": "How many vacation days do I get?"})
     assert response.status_code == 404
     assert "No documents are indexed yet" in response.json()["error"]
@@ -174,10 +179,39 @@ def test_delete_document():
     assert text_hash(deleted_chunk) not in load_json(CACHE_FILE, {})
 
 
-def test_remove_oldest():
+def test_long_section_is_split_into_chunks():
+    paragraph = " ".join(["word"] * 100)
+    text = "# Long Section\n\n" + "\n\n".join([paragraph] * 6)
+
+    chunks = chunk_document("long.txt", text, max_words=250)
+    assert [len(chunk["text"].split()) for chunk in chunks] == [200, 200, 200]
+    assert all(chunk["section"] == "Long Section" for chunk in chunks)
+
+
+def test_benefits_doc_has_several_chunks_in_one_section():
+    chunks = [c for c in load_json(CHUNKS_FILE, []) if c["file"] == "benefits.txt" and c["section"] == "Health Insurance"]
+    assert len(chunks) >= 2
+    assert all(len(c["text"].split()) <= 250 for c in chunks)
+
+
+def test_tests_use_a_temporary_copy_of_the_data():
+    for path in [DATA_DIR, DOCS_DIR, LOGS_DIR, CHUNKS_FILE]:
+        assert "guidely-test-data-" in str(path)
+
+
+def test_remove_least_recent():
     cache = {"first": 1, "second": 2, "third": 3, "fourth": 4}
-    remove_oldest(cache, 2)
+    remove_least_recent(cache, 2)
     assert cache == {"third": 3, "fourth": 4}
+
+
+def test_cache_hit_counts_as_recent_use():
+    cache = {}
+    embed_with_cache(["popular question", "other question"], cache)
+    embed_with_cache(["popular question"], cache)
+
+    remove_least_recent(cache, 1)
+    assert list(cache) == [text_hash("popular question")]
 
 
 def test_delete_unknown_document():
@@ -282,10 +316,63 @@ def test_stream_refusal_ends_with_error(monkeypatch):
 
 
 def test_stream_errors_before_answer_are_normal(monkeypatch):
-    monkeypatch.setattr(search, "LLM_MODEL", "")
+    monkeypatch.setattr(llm, "LLM_MODEL", "")
     response = client.post("/search/ask/stream", json={"question": "How many vacation days do I get?"})
     assert response.status_code == 500
     assert "No AI model is configured" in response.json()["error"]
 
     response = client.post("/search/ask/stream", json={"question": "   "})
     assert response.status_code == 400
+
+
+def test_edit_too_big():
+    policy = DOCS_DIR / "policy.txt"
+    original = policy.read_bytes()
+
+    response = client.put("/documents/policy.txt", json={"text": "a" * (MAX_UPLOAD_MB * 1024 * 1024 + 1)})
+    assert response.status_code == 413
+    assert "too big" in response.json()["error"]
+    assert policy.read_bytes() == original
+
+
+def test_old_log_lines_are_removed(monkeypatch, tmp_path):
+    monkeypatch.setattr(storage, "LOGS_DIR", tmp_path)
+    log = tmp_path / "queries.jsonl"
+    log.write_text(
+        json.dumps({"time": "2000-01-01T10:00:00", "question": "old"}) + "\n"
+        + json.dumps({"time": "2999-01-01T10:00:00", "question": "new"}) + "\n",
+        encoding="utf-8",
+    )
+
+    assert prune_logs(days=30) == 1
+    assert [record["question"] for record in read_log(log)] == ["new"]
+    assert prune_logs(days=0) == 0
+
+
+class BrokenStream:
+    """Stands in for an Ollama response that fails after it started sending the answer."""
+
+    def __init__(self, error):
+        self.error = error
+
+    def iter_lines(self):
+        yield json.dumps({"message": {"content": "Full-time staff "}}).encode()
+        raise self.error
+
+    def close(self):
+        pass
+
+
+@pytest.mark.parametrize("error, status_code", [
+    (requests.exceptions.ConnectionError(ReadTimeoutError(None, None, "Read timed out.")), 504),
+    (requests.exceptions.ConnectionError("Connection reset by peer"), 502),
+    (requests.exceptions.ChunkedEncodingError("Connection broken"), 502),
+])
+def test_stream_errors_are_named_correctly(monkeypatch, error, status_code):
+    monkeypatch.setattr(llm, "call_llm", lambda *args, **kwargs: BrokenStream(error))
+    pieces = llm.stream_llm("question", [])
+
+    assert next(pieces) == "Full-time staff "
+    with pytest.raises(AppError) as raised:
+        next(pieces)
+    assert raised.value.status_code == status_code

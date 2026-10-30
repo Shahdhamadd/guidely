@@ -16,9 +16,15 @@ export default function UploadForm({ busy, categories, onUpload }) {
     setFile(event.dataTransfer.files[0] || null);
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
-    onUpload(file, category);
+    const form = event.target;
+    if (await onUpload(file, category)) {
+      // Clear the form so the same file isn't uploaded again by mistake.
+      form.reset();
+      setFile(null);
+      setCategory("");
+    }
   }
 
   return (
